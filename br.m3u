@@ -1,5 +1,5 @@
 #EXTM3U
 #EXTINF:-1,Globo Bahia FHD (1080i)
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36
 http://hls1.sua.tv/live/globotvbahiafhdbr2/s.m3u8
-
+#EXTINF:-1,GLOBO TV SERGIPE - FHD
+http://viuplus4play.store:80/play/W2vb8k-R6CzsWz2jW9gwa43ODmV-Z3x9SBcu-HfsTxIwCw6lZ7APrD1ffkcge8RJ
