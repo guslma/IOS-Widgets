@@ -2,11 +2,12 @@
 // icon-color: orange; icon-glyph: flag-checkered;
 // Loader — do not edit. Always pulls the latest F1 widget code from GitHub
 // (guslma/IOS-Widgets), so both this device and anyone else using this same
-// loader stay in sync automatically whenever the repo is updated.
+// script stay in sync automatically whenever the repo is updated. Everything
+// runs from this single file — no second script is created.
 
 const RAW_URL = "https://raw.githubusercontent.com/guslma/IOS-Widgets/main/F1/f1-widget.js";
 const LOGO_RAW_URL = "https://raw.githubusercontent.com/guslma/IOS-Widgets/main/F1/F1-mark.png";
-const LIB_FILENAME = "F1-Widget-lib.js";
+const CACHE_FILENAME = "F1-Widget-code-cache.js";
 
 async function ensureLogoAsset(fm) {
   try {
@@ -19,31 +20,54 @@ async function ensureLogoAsset(fm) {
   }
 }
 
+// Basic sanity check to avoid running a truncated/corrupted download.
+function looksComplete(code) {
+  return typeof code === "string" && code.trim().endsWith("Script.complete();");
+}
+
+async function fetchLatestCode() {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const code = await new Request(RAW_URL).loadString();
+      if (looksComplete(code)) return code;
+    } catch (e) {
+      // try again below, or fall through to cache
+    }
+  }
+  return null;
+}
+
 async function run() {
   const fm = FileManager.iCloud();
   await ensureLogoAsset(fm);
 
-  const libPath = fm.joinPath(fm.documentsDirectory(), LIB_FILENAME);
-  try {
-    const code = await new Request(RAW_URL).loadString();
-    fm.writeString(libPath, code);
-  } catch (e) {
-    // Download failed — fall back to whatever version we already have locally, if any.
-    if (!fm.fileExists(libPath)) {
-      const w = new ListWidget();
-      const t = w.addText("Sem conexão para atualizar o widget");
-      t.textColor = Color.white();
-      if (config.runsInWidget) {
-        Script.setWidget(w);
-      } else {
-        await w.presentMedium();
-      }
-      Script.complete();
-      return;
+  const cachePath = fm.joinPath(fm.documentsDirectory(), CACHE_FILENAME);
+  let code = await fetchLatestCode();
+
+  if (code) {
+    try {
+      fm.writeString(cachePath, code);
+    } catch (e) {
+      // ignore cache write failures
     }
+  } else if (fm.fileExists(cachePath)) {
+    code = fm.readString(cachePath);
   }
 
-  importModule(LIB_FILENAME.replace(/\.js$/, ""));
+  if (!code) {
+    const w = new ListWidget();
+    const t = w.addText("Sem conexão para atualizar o widget");
+    t.textColor = Color.white();
+    if (config.runsInWidget) {
+      Script.setWidget(w);
+    } else {
+      await w.presentMedium();
+    }
+    Script.complete();
+    return;
+  }
+
+  eval(code);
 }
 
 await run();
