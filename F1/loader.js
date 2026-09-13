@@ -7,7 +7,9 @@
 
 const RAW_URL = "https://raw.githubusercontent.com/guslma/IOS-Widgets/main/F1/f1-widget.js";
 const LOGO_RAW_URL = "https://raw.githubusercontent.com/guslma/IOS-Widgets/main/F1/F1-mark.png";
-const CACHE_FILENAME = "F1-Widget-code-cache.js";
+// Not named *.js on purpose: Scriptable lists every .js file in this folder as
+// its own script, and this is just an internal cache file, not a script.
+const CACHE_FILENAME = "F1-Widget-code-cache.txt";
 
 async function ensureLogoAsset(fm) {
   try {
@@ -67,7 +69,10 @@ async function run() {
     return;
   }
 
-  eval(code);
+  // Wrap in an explicit async IIFE: top-level `await` inside an eval'd string
+  // doesn't reliably inherit the caller's async context on iOS's JS engine,
+  // so make the async-ness syntactically explicit within the eval'd text itself.
+  await eval(`(async () => {\n${code}\n})()`);
 }
 
 await run();
