@@ -289,14 +289,42 @@ function drawTrackImage(trace, baseColorHex, canvasW = 300, canvasH = 200) {
   const perpX = -dirY;
   const perpY = dirX;
 
-  const half = 9;
-  const linePath = new Path();
-  linePath.move(new Point(p0.x + perpX * half, p0.y + perpY * half));
-  linePath.addLine(new Point(p0.x - perpX * half, p0.y - perpY * half));
-  ctx.addPath(linePath);
-  ctx.setStrokeColor(Color.white());
-  ctx.setLineWidth(3);
-  ctx.strokePath();
+  // Checkered start/finish stripe: 2 rows (along the direction of travel) x
+  // 6 columns (across the track), alternating black/white like a flag.
+  const stripeHalfWidth = 10;
+  const rowThickness = 3.2;
+  const numCols = 6;
+  const colWidth = (stripeHalfWidth * 2) / numCols;
+  for (let row = 0; row < 2; row++) {
+    const rowOffset = (row - 0.5) * rowThickness;
+    for (let col = 0; col < numCols; col++) {
+      const colOffset = (col - numCols / 2 + 0.5) * colWidth;
+      const squareCx = p0.x + dirX * rowOffset + perpX * colOffset;
+      const squareCy = p0.y + dirY * rowOffset + perpY * colOffset;
+      const hw = colWidth / 2;
+      const hh = rowThickness / 2;
+      const square = new Path();
+      const corners = [
+        [-hw, -hh],
+        [hw, -hh],
+        [hw, hh],
+        [-hw, hh],
+      ];
+      corners.forEach(([sx, sy], i) => {
+        const cornerX = squareCx + dirX * sy + perpX * sx;
+        const cornerY = squareCy + dirY * sy + perpY * sx;
+        if (i === 0) {
+          square.move(new Point(cornerX, cornerY));
+        } else {
+          square.addLine(new Point(cornerX, cornerY));
+        }
+      });
+      square.closeSubpath();
+      ctx.addPath(square);
+      ctx.setFillColor((row + col) % 2 === 0 ? Color.white() : new Color("#0a0a0a"));
+      ctx.fillPath();
+    }
+  }
 
   const arrowBaseX = p0.x + dirX * 14;
   const arrowBaseY = p0.y + dirY * 14;
