@@ -277,6 +277,45 @@ function drawTrackImage(trace, baseColorHex, canvasW = 300, canvasH = 200) {
   layer(new Color(midColor), 14.5, 1.6, 2.0);
   layer(new Color(baseColorHex), 13, 0, 0);
 
+  // Start/finish line + direction-of-travel arrow. Point 0 of the trace is the
+  // start/finish line, and the point order follows the actual driving direction.
+  const p0 = pts[0];
+  const pAhead = pts[Math.min(6, pts.length - 1)];
+  const ddx = pAhead.x - p0.x;
+  const ddy = pAhead.y - p0.y;
+  const dlen = Math.hypot(ddx, ddy) || 1;
+  const dirX = ddx / dlen;
+  const dirY = ddy / dlen;
+  const perpX = -dirY;
+  const perpY = dirX;
+
+  const half = 9;
+  const linePath = new Path();
+  linePath.move(new Point(p0.x + perpX * half, p0.y + perpY * half));
+  linePath.addLine(new Point(p0.x - perpX * half, p0.y - perpY * half));
+  ctx.addPath(linePath);
+  ctx.setStrokeColor(Color.white());
+  ctx.setLineWidth(3);
+  ctx.strokePath();
+
+  const arrowBaseX = p0.x + dirX * 14;
+  const arrowBaseY = p0.y + dirY * 14;
+  const tipX = arrowBaseX + dirX * 10;
+  const tipY = arrowBaseY + dirY * 10;
+  const leftX = arrowBaseX + perpX * 5;
+  const leftY = arrowBaseY + perpY * 5;
+  const rightX = arrowBaseX - perpX * 5;
+  const rightY = arrowBaseY - perpY * 5;
+
+  const arrowPath = new Path();
+  arrowPath.move(new Point(tipX, tipY));
+  arrowPath.addLine(new Point(leftX, leftY));
+  arrowPath.addLine(new Point(rightX, rightY));
+  arrowPath.closeSubpath();
+  ctx.addPath(arrowPath);
+  ctx.setFillColor(Color.white());
+  ctx.fillPath();
+
   return ctx.getImage();
 }
 
